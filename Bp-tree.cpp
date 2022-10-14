@@ -504,11 +504,11 @@ int main()
         map<int, int> m;
         int i = 0;
         Btree<int> *res;
-        for (; i < 5000000000; i++)
+        for (;; i++)
         {
             int n = dis(engine);
             // cout << "NUM : " << n << endl;
-            if (i % 10000 == 0)
+            if (i % 1000000 == 0)
                 cout << i << endl;
             if (v[n])
             {
