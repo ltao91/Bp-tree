@@ -19,6 +19,8 @@ public:
     bool is_leaf;
     vector<T> key;
     vector<Node<T> *> c;
+    Node<T> *next, *prev; // only leaf
+    bool is_next = false, is_prev = false;
     Node()
     {
         n = 0;
@@ -60,7 +62,35 @@ public:
     {
         delete root;
     }
-
+    vector<T> Search_Range(T left, T right)
+    {
+        auto l = Search_Node(left, root, root);
+        auto r = Search_Node(right, root, root);
+        vector<T> res;
+        while (1)
+        {
+            if (l == r)
+            {
+                for (auto key : l->key)
+                {
+                    if (left <= key && key <= right)
+                    {
+                        res.push_back(key);
+                    }
+                }
+                break;
+            }
+            for (auto key : l->key)
+            {
+                if (left <= key)
+                {
+                    res.push_back(key);
+                }
+            }
+            l = l->next;
+        }
+        return res;
+    }
     bool Search(T k)
     {
         if (root->n == 0)
@@ -144,6 +174,25 @@ public:
         {
             right->key.push_back(leaf->key[i]);
             right->n++;
+        }
+
+        left->next = right;
+        right->next = leaf->next;
+        if (leaf->is_prev)
+        {
+            leaf->prev->next = left;
+            left->prev = leaf->prev;
+            left->is_prev = true;
+        }
+        left->next = right;
+        right->prev = left;
+        left->is_next = true;
+        right->is_prev = true;
+        if (leaf->is_next)
+        {
+            leaf->next->prev = right;
+            right->next = leaf->next;
+            right->is_next = true;
         }
         if (Parent.find(leaf) != Parent.end())
         {
@@ -282,10 +331,11 @@ public:
         {
             auto now = q.front();
             q.pop();
-            if(now==root){
+            if (now == root)
+            {
                 continue;
             }
-            
+
             if (done.find(now) != done.end())
                 continue;
 
@@ -313,12 +363,14 @@ public:
                      << "ERROR_CHILD_SIZE" << endl;
                 res = true;
             }
-            if((now->is_leaf && now->n<M/2) || (now->is_leaf==false && now->n<(M+1)/2-1)){
+            if ((now->is_leaf && now->n < M / 2) || (now->is_leaf == false && now->n < (M + 1) / 2 - 1))
+            {
                 cout << NUMBER[now] << " : "
                      << "ERROR_SIZE_TOO_SMALL" << endl;
                 res = true;
             }
-            if(now->n > M-1){
+            if (now->n > M - 1)
+            {
                 cout << NUMBER[now] << " : "
                      << "ERROR_SIZE_TOO_LARGE" << endl;
                 res = true;
@@ -362,7 +414,7 @@ public:
         }
         if (x == root)
             return;
-            // cout<<"TOO FEW? : "<<(x->is_leaf && x->n < (M / 2))<<" "<<(x->is_leaf == false && x->n < (M + 1) / 2 - 1)<<endl;
+        // cout<<"TOO FEW? : "<<(x->is_leaf && x->n < (M / 2))<<" "<<(x->is_leaf == false && x->n < (M + 1) / 2 - 1)<<endl;
         if ((x->is_leaf && x->n < (M / 2)) || (x->is_leaf == false && x->n < (M + 1) / 2 - 1))
         {
             // too few
@@ -397,6 +449,18 @@ public:
                         {
                             node->c.push_back(j);
                         }
+                    if (p->c[i]->is_leaf)
+                    {
+                        if (p->c[i]->is_next)
+                        {
+                            node->is_next = true;
+                            node->next = p->c[i]->next;
+                        }
+                        else
+                        {
+                            node->is_next = false;
+                        }
+                    }
                     Delete(K, p, i);
                 }
                 else
@@ -410,7 +474,7 @@ public:
                     else
                     {
                         new_node->key.push_back(node->key[node->key.size() - 1]);
-                        p->key[i-1]=node->key[node->key.size() - 1];
+                        p->key[i - 1] = node->key[node->key.size() - 1];
                     }
                     new_node->n++;
                     node->key.erase(node->key.begin() + node->key.size() - 1);
@@ -438,7 +502,7 @@ public:
                 Node<T> *node = p->c[i + 1];
                 T K = p->key[i];
                 // cout<<"CAN RIGHT MERGE? : "<<(x->is_leaf && x->n + node->n <= M - 1) << " "<<(x->is_leaf == false && x->n + node->n <= M - 1)<<endl;
-                if ((x->is_leaf && x->n + node->n <= M - 1) || (x->is_leaf == false && x->n + node->n+1 <= M - 1))
+                if ((x->is_leaf && x->n + node->n <= M - 1) || (x->is_leaf == false && x->n + node->n + 1 <= M - 1))
                 {
                     if (x->is_leaf == false)
                     {
@@ -455,6 +519,18 @@ public:
                         {
                             x->c.push_back(j);
                         }
+                    if (p->c[i]->is_leaf)
+                    {
+                        if (p->c[i + 1]->is_next)
+                        {
+                            x->is_next = true;
+                            x->next = p->c[i + 1]->next;
+                        }
+                        else
+                        {
+                            x->is_next = false;
+                        }
+                    }
                     Delete(K, p, i + 1);
                 }
                 else
@@ -472,7 +548,7 @@ public:
                     else
                     {
                         x->key.push_back(node->key[0]);
-                        p->key[i]=node->key[1];
+                        p->key[i] = node->key[1];
                         node->key.erase(node->key.begin());
                         x->n++;
                         node->n--;
@@ -494,8 +570,51 @@ public:
 
 int main()
 {
-    cout<<"HELLO"<<endl;
-    int mi = 1000000;
+    {
+        cout << "HELLO" << endl;
+        int mi = 1000000;
+        Btree<int> *tree = new Btree<int>(3);
+        std::random_device seed_gen;
+        std::mt19937 engine(seed_gen());
+        std::uniform_int_distribution<> dis(0, 3000);
+        vector<int> v(1000000 + 10);
+        vector<int> nums;
+        for (int i = 0; i < 10000; i++)
+        {
+            int n = dis(engine);
+            if (v[n])
+                continue;
+            v[n] = 1;
+            tree->Insert(n);
+            nums.push_back(n);
+        }
+        sort(nums.begin(), nums.end());
+
+        for (int i = 1; i < nums.size(); i += 2)
+        {
+            tree->Delete(nums[i]);
+            nums.erase(nums.begin() + i);
+        }
+        for (int l = 0; l < nums.size(); l+=10)
+        {
+            for (int r = l + 1; r < nums.size(); r+=10)
+            {
+                auto res = tree->Search_Range(nums[l], nums[r]);
+                vector<int> check;
+                for (int i = l; i <= r; i++)
+                {
+                    check.push_back(nums[i]);
+                }
+                assert(res == check);
+            }
+            if (l % 10 == 0)
+                cout << l << endl;
+        }
+        cout << "END" << endl;
+        delete tree;
+    }
+    {
+        int mi = 1000000;
         Btree<int> *tree = new Btree<int>(50);
         std::random_device seed_gen;
         std::mt19937 engine(seed_gen());
@@ -548,52 +667,6 @@ int main()
                 }
                 v[n] = 1;
             }
-            // tree->make_number();
-            // tree->print();cout<<endl;cout<<endl;
-            
         }
-        // if (mi > i)
-        // {
-        //     res = tree;
-        //     mi = i;
-        //     cout<<"i : "<<i<<endl;
-        //     res->make_number();
-        //     res->print();
-        // }
-    
+    }
 }
-
-// Deleteの高さ減るところ、deleteでのメモリ開放ミスってるかも
-
-// NUM : 37 Node : 0 Key : 18 Child : 1 2 Node : 1 Key : 4 10 Child : 3 4 5 Node : 2 Key : 26 29 34 Child : 6 7 8 9 Node : 3 Key : 1 2 Child : Node : 4 Key : 7 8 9 Child : Node : 5 Key : 11 14 15 17 Child : Node : 6 Key : 22 23 24 Child : Node : 7 Key : 27 28 Child : Node : 8 Key : 30 31 33 Child : Node : 9 Key : 35 38 Child :
-
-//     NUM : 18 Node : 0 Key : 26 Child : 1 2 Node : 1 Key : 4 10 Child : 3 4 5 Node : 2 Key : 24 29 34 Child : 6 7 8 9 Node : 3 Key : 1 2 Child : Node : 4 Key : 7 8 9 Child : Node : 5 Key : 11 14 15 17 Child : Node : 6 Key : 22 23 Child : Node : 7 Key : 27 28 Child : Node : 8 Key : 30 31 33 Child : Node : 9 Key : 35 38 Child:
-
-// UM : 4
-// Node : 0
-//    Key : 3 6
-//    Child : 1 2 3
-// Node : 1
-//    Key : 1
-//    Child : 4 5
-// Node : 2
-//    Key :
-//    Child : 6
-// Node : 3
-//    Key : 7
-//    Child : 7 8
-// Node : 4
-//    Key : 0
-//    Child :
-// Node : 5
-//    Key : 1 2
-//    Child :
-// Node : 6
-//    Key : 3 5
-//    Child :
-// Node : 7
-//    Key : 6
-//    Child :
-// Node : 8
-//    Key : 7 8
-//    Child :
