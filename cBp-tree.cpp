@@ -670,7 +670,7 @@ int main()
 {
     for (int count = 0; count < 100; count++)
     {
-        cout << count << endl;
+        seeds=vector<ll>();
         int hoge = 5;
         for (int THREAD_NUM = hoge; THREAD_NUM < 9; THREAD_NUM++)
         {
