@@ -668,12 +668,13 @@ void f(ll nn)
 }
 int main()
 {
+    vector<ll> sums(9);
     for (int count = 0; count < 100; count++)
     {
         int hoge = 1;
         for (int THREAD_NUM = hoge; THREAD_NUM < 9; THREAD_NUM++)
         {
-        seeds=vector<ll>();
+            seeds = vector<ll>();
             tree = new Btree<ll>(50);
             auto b = std::chrono::system_clock::now();
             vector<thread> threads;
@@ -687,7 +688,7 @@ int main()
             }
             auto e = std::chrono::system_clock::now();
             cout << (std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) << endl;
-
+            sums[THREAD_NUM] += (std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count());
             {
                 // check :)
                 ll M = 1;
@@ -697,17 +698,22 @@ int main()
                 {
                     for (int i = 0; i < N / THREAD_NUM; i++)
                     {
-                        if(tree->Search(n) != 1){
+                        if (tree->Search(n) != 1)
+                        {
                             tree->make_number();
                             tree->print();
-                            cout<<n<<endl;
+                            cout << n << endl;
                             exit(0);
                         }
+                        n = (A * n + B) % M;
                     }
-                    n = (A * n + B) % M;
                 }
             }
         }
         system("clear");
+    }
+    for (auto i : sums)
+    {
+        cout << i / 100 << endl;
     }
 }
