@@ -643,7 +643,7 @@ using ll = long long;
 Btree<ll> *tree;
 // ll N = 1000000  /100;
 // ll N = 1000000  /10;
-ll N = 1000000;
+ll N = 10000000;
 void f(ll nn)
 {
     auto h = std::hash<std::thread::id>{}(std::this_thread::get_id());
@@ -665,7 +665,7 @@ int main()
     int hoge = 3;
     for (int THREAD_NUM = 0; THREAD_NUM < 13; THREAD_NUM++)
     {
-        tree = new Btree<ll>(3);
+        tree = new Btree<ll>(40);
         auto b = std::chrono::system_clock::now();
         vector<thread> threads;
         for (int i = 0; i < THREAD_NUM; i++)
