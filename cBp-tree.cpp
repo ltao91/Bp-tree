@@ -697,7 +697,12 @@ int main()
                 {
                     for (int i = 0; i < N / THREAD_NUM; i++)
                     {
-                        assert(tree->Search(n) == 1);
+                        if(tree->Search(n) != 1){
+                            tree->make_number();
+                            tree->print();
+                            cout<<n<<endl;
+                            exit(0);
+                        }
                     }
                     n = (A * n + B) % M;
                 }
