@@ -167,7 +167,7 @@ public:
             is_empty_lock.lock();
             if (is_empty)
             {
-                cout << "CREATE TREE" << endl;
+                // cout << "CREATE TREE" << endl;
                 auto node = new Node<T>(1, true);
                 node->key.push_back(k);
                 root = node;
@@ -670,12 +670,12 @@ int main()
 {
     for (int count = 0; count < 100; count++)
     {
-        int hoge = 5;
+        int hoge = 1;
         for (int THREAD_NUM = hoge; THREAD_NUM < 9; THREAD_NUM++)
         {
         seeds=vector<ll>();
             tree = new Btree<ll>(50);
-            // auto b = std::chrono::system_clock::now();
+            auto b = std::chrono::system_clock::now();
             vector<thread> threads;
             for (int i = 0; i < THREAD_NUM; i++)
             {
@@ -685,8 +685,8 @@ int main()
             {
                 threads[i].join();
             }
-            // auto e = std::chrono::system_clock::now();
-            // cout << (std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) << endl;
+            auto e = std::chrono::system_clock::now();
+            cout << (std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) << endl;
 
             {
                 // check :)
@@ -708,5 +708,6 @@ int main()
                 }
             }
         }
+        system("clear");
     }
 }
