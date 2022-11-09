@@ -5,6 +5,7 @@
 #include <chrono>
 #include <functional>
 #include <atomic>
+// #define DEBUG
 using std::ceil;
 using std::cout;
 using std::deque;
@@ -29,10 +30,10 @@ public:
     bool is_leaf;
     vector<T> key;
     vector<Node<T> *> c;
-    Node<T> *next, *prev; // only leaf
+    // Node<T> *next, *prev; // only leaf
     mutex nlock;
     std::thread::id owner;
-    bool is_next = false, is_prev = false;
+    // bool is_next = false, is_prev = false;
     Node() : nlock()
     {
         n = 0;
@@ -43,18 +44,13 @@ public:
         n = n_;
         is_leaf = is_leaf_;
     }
-    ~Node()
-    {
-        for (int i = 0; i < c.size(); i++)
-            delete c[i];
-    }
 };
 
 template <class T>
 class Btree
 {
 public:
-    bool is_empty=true;
+    bool is_empty = true;
     mutex is_empty_lock;
     int M;
     Node<T> *root;
@@ -72,39 +68,35 @@ public:
         root = x;
         M = M_;
     }
-    ~Btree()
-    {
-        delete root;
-    }
-    vector<T> Search_Range(T left, T right)
-    {
-        auto l = Search_Node(left, root, root);
-        auto r = Search_Node(right, root, root);
-        vector<T> res;
-        while (1)
-        {
-            if (l == r)
-            {
-                for (auto key : l->key)
-                {
-                    if (left <= key && key <= right)
-                    {
-                        res.push_back(key);
-                    }
-                }
-                break;
-            }
-            for (auto key : l->key)
-            {
-                if (left <= key)
-                {
-                    res.push_back(key);
-                }
-            }
-            l = l->next;
-        }
-        return res;
-    }
+    // vector<T> Search_Range(T left, T right)
+    // {
+    //     auto l = Search_Node(left, root, root);
+    //     auto r = Search_Node(right, root, root);
+    //     vector<T> res;
+    //     while (1)
+    //     {
+    //         if (l == r)
+    //         {
+    //             for (auto key : l->key)
+    //             {
+    //                 if (left <= key && key <= right)
+    //                 {
+    //                     res.push_back(key);
+    //                 }
+    //             }
+    //             break;
+    //         }
+    //         for (auto key : l->key)
+    //         {
+    //             if (left <= key)
+    //             {
+    //                 res.push_back(key);
+    //             }
+    //         }
+    //         l = l->next;
+    //     }
+    //     return res;
+    // }
     bool Search(T k)
     {
         if (root->n == 0)
@@ -128,28 +120,36 @@ public:
     }
     Node<T> *Search_Node(T k, Node<T> *x, Node<T> *p, map<Node<T> *, Node<T> *> &Parent, deque<Node<T> *> &locked)
     {
+        if (x->owner != std::this_thread::get_id())
+        {
+            print_lock.lock();
+            cout << "OWNER" << endl;
+            cout << x->owner << endl;
+            cout << endl;
+            cout << "this" << endl;
+            cout << std::this_thread::get_id() << endl;
+            cout << (root == x) << endl;
+            print_lock.unlock();
+            exit(0);
+        }
         if (x != p)
         {
             Parent[x] = p;
         }
         if (x->is_leaf)
         {
-            bool f = false;
-            for (auto j : x->key)
-                if (j == k)
-                    flag = true;
-            // assert(flag);
             return x;
         }
         int i = 0;
         for (; i < x->n && x->key[i] <= k; i++)
         {
         }
-        while(!x->c[i]->nlock.try_lock()){
+        while (!x->c.at(i)->nlock.try_lock())
+        {
         }
-        auto next=x->c[i];
-        x->c[i]->owner=std::this_thread::get_id();
-        if(x->c[i]->n<M-3){
+        auto next = x->c[i];
+        x->c[i]->owner = std::this_thread::get_id();
+        if(x->c[i]->n<M-1){
             while(!locked.empty()){
                 locked.front()->nlock.unlock();
                 locked.pop_front();
@@ -160,18 +160,16 @@ public:
     }
     void Insert(T k)
     {
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "called insert" << endl;
-        // print_lock.unlock();
-
-        if(is_empty){
+        if (is_empty)
+        {
             is_empty_lock.lock();
-            if(is_empty){
-                cout<<"CREATE TREE"<<endl;
-                auto node=new Node<T>(1,true);
+            if (is_empty)
+            {
+                cout << "CREATE TREE" << endl;
+                auto node = new Node<T>(1, true);
                 node->key.push_back(k);
-                root=node;
-                is_empty=false;
+                root = node;
+                is_empty = false;
                 is_empty_lock.unlock();
                 return;
             }
@@ -181,39 +179,31 @@ public:
         map<Node<T> *, Node<T> *> Parent = map<Node<T> *, Node<T> *>();
         deque<Node<T> *> locked;
 
-        // root->nlock.lock();
-        
-        while(!root->nlock.try_lock()){
-
+        while (!root->nlock.try_lock())
+        {
+            // print_lock.lock();
+            // cout<<std::this_thread::get_id()<<" is waiting for "<<root->owner<<endl;
+            // print_lock.unlock();
         }
-        root->owner=std::this_thread::get_id();
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "get root_lock" << endl;
-        // print_lock.unlock();
-        
+        root->owner = std::this_thread::get_id();
+
         locked.push_back(root);
         auto leaf = Search_Node(k, root, root, Parent, locked);
         for (auto key : leaf->key)
             if (key == k)
             {
-                // cout << std::this_thread::get_id() << "end insert" << endl;
                 return;
             }
-        Insert_Leaf(k, leaf, Parent);
+        Insert_Leaf(k, leaf, Parent,locked);
         while (!locked.empty())
         {
             locked.front()->nlock.unlock();
             locked.pop_front();
         }
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "end insert" << endl;
-        // print_lock.unlock();
     }
-    void Insert_Leaf(T k, Node<T> *x, map<Node<T> *, Node<T> *> &Parent)
+    void Insert_Leaf(T k, Node<T> *x, map<Node<T> *, Node<T> *> &Parent,deque<Node<T>*> &locked)
     {
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "called insert_leaf" << endl;
-        // print_lock.unlock();
+        assert(x->key.size() == x->n);
         int i = 0;
         for (; i < x->n && x->key.at(i) <= k; i++)
         {
@@ -228,19 +218,13 @@ public:
         x->n++;
         if (x->n == M)
         {
-            SplitLeaf(x, Parent);
+            SplitLeaf(x, Parent,locked);
         }
-
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "end insert_leaf" << endl;
-        // print_lock.unlock();
     }
 
-    void SplitLeaf(Node<T> *leaf, map<Node<T> *, Node<T> *> &Parent)
+    void SplitLeaf(Node<T> *leaf, map<Node<T> *, Node<T> *> &Parent,deque<Node<T>*> &locked)
     {
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "called split_leaf" << endl;
-        // print_lock.unlock();
+        assert(leaf->key.size() == leaf->n);
         Node<T> *left = new Node<T>(0, true);
         Node<T> *right = new Node<T>(0, true);
         int up = (M - 1 + 2 - 1) / 2;
@@ -256,27 +240,27 @@ public:
             right->n++;
         }
 
-        left->next = right;
-        right->next = leaf->next;
-        if (leaf->is_prev)
-        {
-            leaf->prev->next = left;
-            left->prev = leaf->prev;
-            left->is_prev = true;
-        }
-        left->next = right;
-        right->prev = left;
-        left->is_next = true;
-        right->is_prev = true;
-        if (leaf->is_next)
-        {
-            leaf->next->prev = right;
-            right->next = leaf->next;
-            right->is_next = true;
-        }
+        // left->next = right;
+        // right->next = leaf->next;
+        // if (leaf->is_prev)
+        // {
+        //     leaf->prev->next = left;
+        //     left->prev = leaf->prev;
+        //     left->is_prev = true;
+        // }
+        // left->next = right;
+        // right->prev = left;
+        // left->is_next = true;
+        // right->is_prev = true;
+        // if (leaf->is_next)
+        // {
+        //     leaf->next->prev = right;
+        //     right->next = leaf->next;
+        //     right->is_next = true;
+        // }
         if (Parent.find(leaf) != Parent.end())
         {
-            Insert_Non_Leaf(key, Parent[leaf], left, right, Parent);
+            Insert_Non_Leaf(key, Parent[leaf], left, right, Parent,locked);
         }
         else
         {
@@ -284,17 +268,14 @@ public:
             node->key.push_back(key);
             node->c.push_back(left);
             node->c.push_back(right);
+            locked.pop_front();
             root = node;
         }
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "end insert_leaf" << endl;
-        // print_lock.unlock();
     }
-    void Insert_Non_Leaf(T k, Node<T> *x, Node<T> *left, Node<T> *right, map<Node<T> *, Node<T> *> &Parent)
+    void Insert_Non_Leaf(T k, Node<T> *x, Node<T> *left, Node<T> *right, map<Node<T> *, Node<T> *> &Parent,deque<Node<T>*> &locked)
     {
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "called insert_non_leaf" << endl;
-        // print_lock.unlock();
+        assert(x->key.size() == x->n);
+        assert(x->c.size()==x->n+1);
         int i = 0;
         for (; i < x->n && x->key[i] <= k; i++)
         {
@@ -318,18 +299,13 @@ public:
 
         if (x->n == M)
         {
-            Split_Non_Leaf(x, Parent);
+            Split_Non_Leaf(x, Parent,locked);
         }
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "called insert_non_leaf" << endl;
-        // print_lock.unlock();
     }
-    void Split_Non_Leaf(Node<T> *x, map<Node<T> *, Node<T> *> &Parent)
+    void Split_Non_Leaf(Node<T> *x, map<Node<T> *, Node<T> *> &Parent,deque<Node<T>*> &locked)
     {
-
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "called split_non_leaf" << endl;
-        // print_lock.unlock();
+        assert(x->key.size() == x->n);
+        assert(x->c.size()==x->n+1);
         Node<T> *left = new Node<T>(0, false);
         Node<T> *right = new Node<T>(0, false);
         int up = (M + 2 - 1) / 2 - 1;
@@ -350,7 +326,7 @@ public:
         right->c.push_back(x->c[x->n]);
         if (Parent.find(x) != Parent.end())
         {
-            Insert_Non_Leaf(key, Parent[x], left, right, Parent);
+            Insert_Non_Leaf(key, Parent[x], left, right, Parent,locked);
         }
         else
         {
@@ -358,11 +334,9 @@ public:
             node->c.push_back(left);
             node->c.push_back(right);
             node->key.push_back(key);
+            locked.pop_front();
             root = node;
         }
-        // print_lock.lock();
-        // cout << std::this_thread::get_id() << "end split_non_leaf" << endl;
-        // print_lock.unlock();
     }
     void make_number()
     {
@@ -668,6 +642,7 @@ public:
 using ll = long long;
 Btree<ll> *tree;
 // ll N = 1000000  /100;
+// ll N = 1000000  /10;
 ll N = 1000000;
 void f(ll nn)
 {
@@ -687,9 +662,10 @@ void f(ll nn)
 }
 int main()
 {
-    for (int THREAD_NUM = 1; THREAD_NUM < 14; THREAD_NUM++)
+    int hoge = 3;
+    for (int THREAD_NUM = 0; THREAD_NUM < 13; THREAD_NUM++)
     {
-        tree = new Btree<ll>(50);
+        tree = new Btree<ll>(3);
         auto b = std::chrono::system_clock::now();
         vector<thread> threads;
         for (int i = 0; i < THREAD_NUM; i++)
@@ -698,13 +674,13 @@ int main()
         }
         for (int i = 0; i < THREAD_NUM; i++)
         {
-            // print_lock.lock();
+            print_lock.lock();
             // cout << "thread " << i << " is " << threads[i].get_id() << endl;
-            // print_lock.unlock();
+            print_lock.unlock();
             threads[i].join();
-            // print_lock.lock();
+            print_lock.lock();
             // cout << "end thread " << i << endl;
-            // print_lock.unlock();
+            print_lock.unlock();
         }
         auto e = std::chrono::system_clock::now();
         cout << (std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) << endl;
