@@ -670,10 +670,10 @@ int main()
 {
     for (int count = 0; count < 100; count++)
     {
-        seeds=vector<ll>();
         int hoge = 5;
         for (int THREAD_NUM = hoge; THREAD_NUM < 9; THREAD_NUM++)
         {
+        seeds=vector<ll>();
             tree = new Btree<ll>(50);
             // auto b = std::chrono::system_clock::now();
             vector<thread> threads;
