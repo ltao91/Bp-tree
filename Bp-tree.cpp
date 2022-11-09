@@ -52,6 +52,7 @@ public:
         root = x;
     }
     // we have cail(M/2)<=|children|<=M;
+    // |children|<=n+1 n==|key|
     Btree(int M_)
     {
         Node<T> *x = new Node<T>(0, true);
