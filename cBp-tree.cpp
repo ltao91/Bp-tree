@@ -44,6 +44,13 @@ public:
         n = n_;
         is_leaf = is_leaf_;
     }
+    ~Node(){
+        if(is_leaf==false){
+            for(auto i:c){
+                delete i;
+            }
+        }
+    }
 };
 
 template <class T>
@@ -67,6 +74,11 @@ public:
         Node<T> *x = new Node<T>(0, true);
         root = x;
         M = M_;
+    }
+    ~Btree()
+    {
+        if (!is_empty)
+            delete root;
     }
     // vector<T> Search_Range(T left, T right)
     // {
@@ -668,6 +680,7 @@ void f(ll nn)
 }
 int main()
 {
+    cout << "NIHAO" << endl;
     vector<ll> sums(9);
     for (int count = 0; count < 100; count++)
     {
@@ -675,7 +688,7 @@ int main()
         for (int THREAD_NUM = hoge; THREAD_NUM < 9; THREAD_NUM++)
         {
             seeds = vector<ll>();
-            tree = new Btree<ll>(50);
+            tree = new Btree<ll>(3);
             auto b = std::chrono::system_clock::now();
             vector<thread> threads;
             for (int i = 0; i < THREAD_NUM; i++)
@@ -709,6 +722,7 @@ int main()
                     }
                 }
             }
+            delete tree;
         }
         system("clear");
     }
