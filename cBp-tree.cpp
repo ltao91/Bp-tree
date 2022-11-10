@@ -44,9 +44,12 @@ public:
         n = n_;
         is_leaf = is_leaf_;
     }
-    ~Node(){
-        if(is_leaf==false){
-            for(auto i:c){
+    ~Node()
+    {
+        if (is_leaf == false)
+        {
+            for (auto i : c)
+            {
                 delete i;
             }
         }
@@ -128,7 +131,7 @@ public:
         for (; i < x->n && x->key[i] <= k; i++)
         {
         }
-        Search(k, x->c[i]);
+        return Search(k, x->c[i]);
     }
     Node<T> *Search_Node(T k, Node<T> *x, Node<T> *p, map<Node<T> *, Node<T> *> &Parent, deque<Node<T> *> &locked)
     {
@@ -170,7 +173,7 @@ public:
             }
         }
         locked.push_back(next);
-        Search_Node(k, next, x, Parent, locked);
+        return Search_Node(k, next, x, Parent, locked);
     }
     void Insert(T k)
     {
@@ -470,230 +473,310 @@ public:
         return res;
     }
 
-    // void Delete(T k, Node<T> *x, int pointer = -1)
+    void Delete(T k, Node<T> *x, map<Node<T> *, Node<T> *> &Parent, deque<Node<T> *> &locked, int pointer = -1)
+    {
 
-    // {
-    //     // cout<<"k : "<<k<<endl;
-    //     // cout<<"x->key : ";for(auto j:x->key)cout<<j<<" ";cout<<endl;
-    //     for (int i = 0; i < x->key.size(); i++)
-    //     {
-    //         if (x->key[i] == k)
-    //         {
-    //             x->key.erase(x->key.begin() + i);
-    //             break;
-    //         }
-    //     }
-    //     if (pointer != -1)
-    //     {
-    //         x->c.erase(x->c.begin() + pointer);
-    //     }
-    //     x->n--;
-    //     if (x == root && x->n == 0)
-    //     {
-    //         if (x->c.size() == 0)
-    //         {
-    //             root = new Node<T>(0, true);
-    //             return;
-    //         }
-    //         root = x->c[0];
-    //         return;
-    //     }
-    //     if (x == root)
-    //         return;
-    //     // cout<<"TOO FEW? : "<<(x->is_leaf && x->n < (M / 2))<<" "<<(x->is_leaf == false && x->n < (M + 1) / 2 - 1)<<endl;
-    //     if ((x->is_leaf && x->n < (M / 2)) || (x->is_leaf == false && x->n < (M + 1) / 2 - 1))
-    //     {
-    //         // too few
-    //         Node<T> *p = Parent[x];
-    //         int i = 0;
-    //         for (;; i++)
-    //         {
-    //             if (p->c[i] == x)
-    //                 break;
-    //         }
-    //         bool l = false, r = false;
-    //         if (i != 0)
-    //         {
-    //             // from left
-    //             Node<T> *node = p->c[i - 1];
-    //             T K = p->key[i - 1];
-    //             // cout<<"CAN LEFT MERGE? : "<<(x->is_leaf && x->n + node->n <= M - 1)<<" "<<(x->is_leaf == false && x->n + node->n + 1 <= M - 1)<<endl;
-    //             if ((x->is_leaf && x->n + node->n <= M - 1) || (x->is_leaf == false && x->n + node->n + 1 <= M - 1))
-    //             {
-    //                 if (x->is_leaf == false)
-    //                 {
-    //                     node->key.push_back(K);
-    //                     node->n++;
-    //                 }
-    //                 for (auto j : x->key)
-    //                 {
-    //                     node->key.push_back(j);
-    //                     node->n++;
-    //                 }
-    //                 if (x->is_leaf == false)
-    //                     for (auto j : x->c)
-    //                     {
-    //                         node->c.push_back(j);
-    //                     }
-    //                 if (p->c[i]->is_leaf)
-    //                 {
-    //                     if (p->c[i]->is_next)
-    //                     {
-    //                         node->is_next = true;
-    //                         node->next = p->c[i]->next;
-    //                     }
-    //                     else
-    //                     {
-    //                         node->is_next = false;
-    //                     }
-    //                 }
-    //                 Delete(K, p, i);
-    //             }
-    //             else
-    //             {
-    //                 Node<T> *new_node = new Node<T>(0, x->is_leaf);
-    //                 if (x->is_leaf == false)
-    //                 {
-    //                     new_node->key.push_back(K);
-    //                     p->key[i - 1] = node->key[node->key.size() - 1];
-    //                 }
-    //                 else
-    //                 {
-    //                     new_node->key.push_back(node->key[node->key.size() - 1]);
-    //                     p->key[i - 1] = node->key[node->key.size() - 1];
-    //                 }
-    //                 new_node->n++;
-    //                 node->key.erase(node->key.begin() + node->key.size() - 1);
-    //                 node->n--;
-    //                 for (auto j : x->key)
-    //                 {
-    //                     new_node->key.push_back(j);
-    //                     new_node->n++;
-    //                 }
-    //                 if (x->is_leaf == false)
-    //                 {
-    //                     new_node->c.push_back(node->c[node->c.size() - 1]);
-    //                     node->c.erase(node->c.begin() + node->c.size() - 1);
-    //                     for (auto j : x->c)
-    //                     {
-    //                         new_node->c.push_back(j);
-    //                     }
-    //                 }
-    //                 p->c[i] = new_node;
-    //             }
-    //         }
-    //         else
-    //         {
-    //             // from right
-    //             Node<T> *node = p->c[i + 1];
-    //             T K = p->key[i];
-    //             // cout<<"CAN RIGHT MERGE? : "<<(x->is_leaf && x->n + node->n <= M - 1) << " "<<(x->is_leaf == false && x->n + node->n <= M - 1)<<endl;
-    //             if ((x->is_leaf && x->n + node->n <= M - 1) || (x->is_leaf == false && x->n + node->n + 1 <= M - 1))
-    //             {
-    //                 if (x->is_leaf == false)
-    //                 {
-    //                     x->key.push_back(K);
-    //                     x->n++;
-    //                 }
-    //                 for (auto j : node->key)
-    //                 {
-    //                     x->key.push_back(j);
-    //                     x->n++;
-    //                 }
-    //                 if (x->is_leaf == false)
-    //                     for (auto j : node->c)
-    //                     {
-    //                         x->c.push_back(j);
-    //                     }
-    //                 if (p->c[i]->is_leaf)
-    //                 {
-    //                     if (p->c[i + 1]->is_next)
-    //                     {
-    //                         x->is_next = true;
-    //                         x->next = p->c[i + 1]->next;
-    //                     }
-    //                     else
-    //                     {
-    //                         x->is_next = false;
-    //                     }
-    //                 }
-    //                 Delete(K, p, i + 1);
-    //             }
-    //             else
-    //             {
-    //                 if (x->is_leaf == false)
-    //                 {
-    //                     x->key.push_back(K);
-    //                     p->key[i] = node->key[0];
-    //                     node->key.erase(node->key.begin());
-    //                     x->n++;
-    //                     node->n--;
-    //                     x->c.push_back(node->c[0]);
-    //                     node->c.erase(node->c.begin());
-    //                 }
-    //                 else
-    //                 {
-    //                     x->key.push_back(node->key[0]);
-    //                     p->key[i] = node->key[1];
-    //                     node->key.erase(node->key.begin());
-    //                     x->n++;
-    //                     node->n--;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     else
-    //     {
-    //         return;
-    //     }
-    // }
-    // void Delete(T k)
-    // {
-    //     auto L = Search_Node(k, root, root);
-    //     Delete(k, L);
-    // }
+        // print_lock.lock();
+        // cout << std::this_thread::get_id() << "entry delete" << endl;
+        // print_lock.unlock();
+        bool f = false;
+        for (int i = 0; i < x->key.size(); i++)
+        {
+            if (x->key[i] == k)
+            {
+                f = true;
+                x->key.erase(x->key.begin() + i);
+                break;
+            }
+        }
+        if (!f)
+        {
+            // print_lock.lock();
+            // cout << "NO DELETE KEY" << endl;
+            // cout << k << endl;
+            // cout << (x == root) << endl;
+            // cout << (x->owner == std::this_thread::get_id()) << endl;
+            // cout << x->is_leaf << endl;
+
+            // // exit(0);
+            // print_lock.unlock();
+            return;
+        }
+        if (pointer != -1)
+        {
+            x->c.erase(x->c.begin() + pointer);
+        }
+        x->n--;
+        if (x == root && x->n == 0)
+        {
+            if (x->c.size() == 0)
+            {
+                locked.pop_front();
+                root = new Node<T>(0, true);
+                return;
+            }
+            locked.pop_front();
+            root = x->c[0];
+            return;
+        }
+        if (x == root)
+            return;
+        // cout<<"TOO FEW? : "<<(x->is_leaf && x->n < (M / 2))<<" "<<(x->is_leaf == false && x->n < (M + 1) / 2 - 1)<<endl;
+        if ((x->is_leaf && x->n < (M / 2)) || (x->is_leaf == false && x->n < (M + 1) / 2 - 1))
+        {
+            // too few
+            Node<T> *p = Parent[x];
+            int i = 0;
+            for (;; i++)
+            {
+                if (p->c[i] == x)
+                    break;
+            }
+            bool l = false, r = false;
+            if (i != 0)
+            {
+                // from left
+                Node<T> *node = p->c[i - 1];
+                T K = p->key[i - 1];
+                // cout<<"CAN LEFT MERGE? : "<<(x->is_leaf && x->n + node->n <= M - 1)<<" "<<(x->is_leaf == false && x->n + node->n + 1 <= M - 1)<<endl;
+                if ((x->is_leaf && x->n + node->n <= M - 1) || (x->is_leaf == false && x->n + node->n + 1 <= M - 1))
+                {
+                    if (x->is_leaf == false)
+                    {
+                        node->key.push_back(K);
+                        node->n++;
+                    }
+                    for (auto j : x->key)
+                    {
+                        node->key.push_back(j);
+                        node->n++;
+                    }
+                    if (x->is_leaf == false)
+                        for (auto j : x->c)
+                        {
+                            node->c.push_back(j);
+                        }
+                    Delete(K, p, Parent, locked, i);
+                }
+                else
+                {
+                    while (!node->nlock.try_lock())
+                    {
+                    }
+                    T HOGE;
+                    x->key.push_back(HOGE);
+                    for (int i = x->key.size() - 1; i > 0; i--)
+                        x->key[i] = x->key[i - 1];
+                    if (x->is_leaf == false)
+                    {
+                        x->key[0] = K;
+                        p->key[i - 1] = node->key[node->key.size() - 1];
+                    }
+                    else
+                    {
+                        x->key[0] = node->key[node->key.size() - 1];
+                        p->key[i - 1] = node->key[node->key.size() - 1];
+                    }
+                    x->n++;
+                    node->key.erase(node->key.begin() + node->key.size() - 1);
+                    node->n--;
+                    if (x->is_leaf == false)
+                    {
+                        Node<T> *NP;
+                        x->c.push_back(NP);
+                        for (int i = x->c.size() - 1; i > 0; i--)
+                            x->c[i] = x->c[i - 1];
+
+                        x->c[0] = node->c[node->c.size() - 1];
+                        node->c.erase(node->c.begin() + node->c.size() - 1);
+                    }
+                    node->nlock.unlock();
+                }
+            }
+            else
+            {
+                // from right
+                Node<T> *node = p->c[i + 1];
+                T K = p->key[i];
+                // cout<<"CAN RIGHT MERGE? : "<<(x->is_leaf && x->n + node->n <= M - 1) << " "<<(x->is_leaf == false && x->n + node->n <= M - 1)<<endl;
+                if ((x->is_leaf && x->n + node->n <= M - 1) || (x->is_leaf == false && x->n + node->n + 1 <= M - 1))
+                {
+                    if (x->is_leaf == false)
+                    {
+                        x->key.push_back(K);
+                        x->n++;
+                    }
+                    for (auto j : node->key)
+                    {
+                        x->key.push_back(j);
+                        x->n++;
+                    }
+                    if (x->is_leaf == false)
+                        for (auto j : node->c)
+                        {
+                            x->c.push_back(j);
+                        }
+
+                    Delete(K, p, Parent, locked, i + 1);
+                }
+                else
+                {
+                    while (!node->nlock.try_lock())
+                    {
+                    }
+                    if (x->is_leaf == false)
+                    {
+                        x->key.push_back(K);
+                        p->key[i] = node->key[0];
+                        node->key.erase(node->key.begin());
+                        x->n++;
+                        node->n--;
+                        x->c.push_back(node->c[0]);
+                        node->c.erase(node->c.begin());
+                    }
+                    else
+                    {
+                        x->key.push_back(node->key[0]);
+                        p->key[i] = node->key[1];
+                        node->key.erase(node->key.begin());
+                        x->n++;
+                        node->n--;
+                    }
+                    node->nlock.unlock();
+                }
+            }
+        }
+        else
+        {
+            return;
+        }
+    }
+    Node<T> *Search_Node_d(T k, Node<T> *x, Node<T> *p, map<Node<T> *, Node<T> *> &Parent, deque<Node<T> *> &locked)
+    {
+        // print_lock.lock();
+        // cout << std::this_thread::get_id() << " start search node d" << endl;
+        // print_lock.unlock();
+        if (x->owner != std::this_thread::get_id())
+        {
+            print_lock.lock();
+            cout << "OWNER" << endl;
+            cout << x->owner << endl;
+            cout << endl;
+            cout << "this" << endl;
+            cout << std::this_thread::get_id() << endl;
+            cout << (root == x) << endl;
+            print_lock.unlock();
+            exit(0);
+        }
+        if (x != p)
+        {
+            Parent[x] = p;
+        }
+        if (x->is_leaf)
+        {
+            // print_lock.lock();
+            // cout << std::this_thread::get_id() << " end search node d" << endl;
+            // print_lock.unlock();
+            return x;
+        }
+        int i = 0;
+        for (; i < x->n && x->key[i] <= k; i++)
+        {
+        }
+        while (!x->c.at(i)->nlock.try_lock())
+        {
+        }
+
+        // print_lock.lock();
+        // cout << std::this_thread::get_id() << " get child lock" << endl;
+        // print_lock.unlock();
+        auto next = x->c.at(i);
+        x->c.at(i)->owner = std::this_thread::get_id();
+        if ((next->is_leaf && next->n > (M / 2)) || (next->is_leaf == false && next->n > (M + 1) / 2 - 1))
+        {
+            while (!locked.empty())
+            {
+                locked.front()->nlock.unlock();
+                locked.pop_front();
+            }
+        }
+        locked.push_back(next);
+        return Search_Node_d(k, next, x, Parent, locked);
+    }
+    void Delete(T k)
+    {
+        map<Node<T> *, Node<T> *> Parent;
+        deque<Node<T> *> locked;
+        while (!root->nlock.try_lock())
+        {
+        }
+        root->owner = std::this_thread::get_id();
+        locked.push_back(root);
+        auto L = Search_Node_d(k, root, root, Parent, locked);
+        Delete(k, L, Parent, locked);
+        while (!locked.empty())
+        {
+            locked.front()->nlock.unlock();
+            locked.pop_front();
+        }
+    }
 };
 using ll = long long;
 Btree<ll> *tree;
-// ll N = 1000000  /100;
-// ll N = 1000000  /10;
-ll N = 1000000;
-vector<ll> seeds;
-mutex seeds_lock;
+ll N = 10000000;
 ll A = 33797, B = 1;
-void f(ll nn)
+void f(pair<ll, ll> arg)
 {
-    auto h = std::hash<std::thread::id>{}(std::this_thread::get_id());
+    ll nn = arg.first;
+    ll seed = arg.second;
     ll M = 1;
     for (int k = 0; k < 32; k++)
         M *= 2;
 
-    ll X = h % M;
-    seeds_lock.lock();
-    seeds.push_back(X);
-    seeds_lock.unlock();
+    ll X = seed % M;
     while (nn--)
     {
-        tree->Insert(X);
+        // assert(m.find(X) != m.end());
+        tree->Delete(X);
         X = (A * X + B) % M;
     }
 }
 int main()
 {
-    cout << "NIHAO" << endl;
     vector<ll> sums(9);
     for (int count = 0; count < 100; count++)
     {
-        int hoge = 1;
-        for (int THREAD_NUM = hoge; THREAD_NUM < 9; THREAD_NUM++)
+        cout<<"NOW :"<<count<<endl;
+        for (int THREAD_NUM = 1; THREAD_NUM < 9; THREAD_NUM++)
         {
-            seeds = vector<ll>();
-            tree = new Btree<ll>(3);
-            auto b = std::chrono::system_clock::now();
+            // m = map<ll, ll>();
+            tree = new Btree<ll>(20);
             vector<thread> threads;
+            vector<ll> seeds;
+            auto h = std::hash<std::thread::id>{}(std::this_thread::get_id());
+            ll M = 1;
+            for (int k = 0; k < 32; k++)
+                M *= 2;
+            ll X = h % M;
+            ll seed = X;
+            ll length = (N / THREAD_NUM - 1);
+            for (ll i = 0; i < N; i++)
+            {
+                if (i % (length) == 0 && seeds.size() != THREAD_NUM)
+                {
+                    seeds.push_back(X);
+                }
+                // cout<<X<<endl;
+                // m[X]++;
+                tree->Insert(X);
+                X = (A * X + B) % M;
+            }
+            assert(seeds.size() == THREAD_NUM);
+            ll nn = N / THREAD_NUM - 3;
+            auto b = std::chrono::system_clock::now();
             for (int i = 0; i < THREAD_NUM; i++)
             {
-                threads.emplace_back(f, N / THREAD_NUM);
+                threads.emplace_back(f, make_pair(nn, seeds[i]));
             }
             for (int i = 0; i < THREAD_NUM; i++)
             {
@@ -701,17 +784,34 @@ int main()
             }
             auto e = std::chrono::system_clock::now();
             cout << (std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) << endl;
-            sums[THREAD_NUM] += (std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count());
+
+            assert(nn <= length);
+            // for (auto i : m)
+            //     if (i.second >= 2)
+            //     {
+            //         cout << "CONFLICT" << endl;
+            //     }
+
             {
-                // check :)
-                ll M = 1;
-                for (int k = 0; k < 32; k++)
-                    M *= 2;
-                for (auto n : seeds)
+                // check
+                for (int i = 0; i < THREAD_NUM; i++)
                 {
-                    for (int i = 0; i < N / THREAD_NUM; i++)
+                    ll n = seeds[i];
+                    for (int i = 0; i < nn; i++)
                     {
-                        if (tree->Search(n) != 1)
+                        // assert(m.find(n) != m.end());
+                        if (tree->Search(n) == 1)
+                        {
+                            tree->make_number();
+                            tree->print();
+                            cout << n << endl;
+                            exit(0);
+                        }
+                        n = (A * n + B) % M;
+                    }
+                    for (int i = nn; i < length; i++)
+                    {
+                        if (tree->Search(n) == 0)
                         {
                             tree->make_number();
                             tree->print();

@@ -111,7 +111,7 @@ public:
         for (; i < x->n && x->key[i] <= k; i++)
         {
         }
-        Search(k, x->c[i]);
+        return Search(k, x->c[i]);
     }
     Node<T> *Search_Node(T k, Node<T> *x, Node<T> *p)
     {
@@ -132,7 +132,7 @@ public:
         for (; i < x->n && x->key[i] <= k; i++)
         {
         }
-        Search_Node(k, x->c[i], x);
+        return Search_Node(k, x->c[i], x);
     }
     void Insert(T k)
     {
@@ -160,7 +160,7 @@ public:
         }
     }
 
-    T SplitLeaf(Node<T> *leaf)
+    void SplitLeaf(Node<T> *leaf)
     {
         Node<T> *left = new Node<T>(0, true);
         Node<T> *right = new Node<T>(0, true);
