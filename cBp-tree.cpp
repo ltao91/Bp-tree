@@ -491,15 +491,16 @@ public:
         }
         if (!f)
         {
-            // print_lock.lock();
-            // cout << "NO DELETE KEY" << endl;
+            print_lock.lock();
+            cout << "NO DELETE KEY" << endl;
+            cout << x->n << " " << x->key.size() << " " << x->c.size() << endl;
             // cout << k << endl;
             // cout << (x == root) << endl;
             // cout << (x->owner == std::this_thread::get_id()) << endl;
-            // cout << x->is_leaf << endl;
+            cout << x->is_leaf << endl;
 
             // // exit(0);
-            // print_lock.unlock();
+            print_lock.unlock();
             return;
         }
         if (pointer != -1)
@@ -536,6 +537,9 @@ public:
             if (i != 0)
             {
                 // from left
+                while (!p->c[i - 1]->nlock.try_lock())
+                {
+                }
                 Node<T> *node = p->c[i - 1];
                 T K = p->key[i - 1];
                 // cout<<"CAN LEFT MERGE? : "<<(x->is_leaf && x->n + node->n <= M - 1)<<" "<<(x->is_leaf == false && x->n + node->n + 1 <= M - 1)<<endl;
@@ -560,9 +564,6 @@ public:
                 }
                 else
                 {
-                    while (!node->nlock.try_lock())
-                    {
-                    }
                     T HOGE;
                     x->key.push_back(HOGE);
                     for (int i = x->key.size() - 1; i > 0; i--)
@@ -590,12 +591,15 @@ public:
                         x->c[0] = node->c[node->c.size() - 1];
                         node->c.erase(node->c.begin() + node->c.size() - 1);
                     }
-                    node->nlock.unlock();
                 }
+                node->nlock.unlock();
             }
             else
             {
                 // from right
+                while (!p->c[i + 1]->nlock.try_lock())
+                {
+                }
                 Node<T> *node = p->c[i + 1];
                 T K = p->key[i];
                 // cout<<"CAN RIGHT MERGE? : "<<(x->is_leaf && x->n + node->n <= M - 1) << " "<<(x->is_leaf == false && x->n + node->n <= M - 1)<<endl;
@@ -621,9 +625,6 @@ public:
                 }
                 else
                 {
-                    while (!node->nlock.try_lock())
-                    {
-                    }
                     if (x->is_leaf == false)
                     {
                         x->key.push_back(K);
@@ -642,8 +643,8 @@ public:
                         x->n++;
                         node->n--;
                     }
-                    node->nlock.unlock();
                 }
+                node->nlock.unlock();
             }
         }
         else
@@ -683,13 +684,50 @@ public:
         for (; i < x->n && x->key[i] <= k; i++)
         {
         }
-        while (!x->c.at(i)->nlock.try_lock())
+        if (x->owner != std::this_thread::get_id())
         {
+            print_lock.lock();
+            cout << "W" << endl;
+            cout << x->owner << endl;
+            cout << endl;
+            cout << "this" << endl;
+            cout << std::this_thread::get_id() << endl;
+            cout << (root == x) << endl;
+            print_lock.unlock();
+            exit(0);
+        }
+        try
+        {
+            while (!x->c.at(i)->nlock.try_lock())
+            {
+            }
+        }
+        catch (std::exception e)
+        {
+            cout << "HELLO" << endl;
+            cout << (x == root) << endl;
+            cout << (x->owner == std::this_thread::get_id()) << endl;
+            cout << x->n << " " << x->c.size() << " " << x->key.size() << endl;
+            cout << e.what() << endl;
+            exit(0);
         }
 
         // print_lock.lock();
         // cout << std::this_thread::get_id() << " get child lock" << endl;
         // print_lock.unlock();
+        if (x->owner != std::this_thread::get_id())
+        {
+            print_lock.lock();
+            cout << "CHILD" << endl;
+            cout << "OWNER" << endl;
+            cout << x->owner << endl;
+            cout << endl;
+            cout << "this" << endl;
+            cout << std::this_thread::get_id() << endl;
+            cout << (root == x) << endl;
+            print_lock.unlock();
+            exit(0);
+        }
         auto next = x->c.at(i);
         x->c.at(i)->owner = std::this_thread::get_id();
         if ((next->is_leaf && next->n > (M / 2)) || (next->is_leaf == false && next->n > (M + 1) / 2 - 1))
@@ -723,7 +761,7 @@ public:
 };
 using ll = long long;
 Btree<ll> *tree;
-ll N = 10000000;
+ll N = 100000;
 ll A = 33797, B = 1;
 void f(pair<ll, ll> arg)
 {
@@ -746,11 +784,11 @@ int main()
     vector<ll> sums(9);
     for (int count = 0; count < 100; count++)
     {
-        cout<<"NOW :"<<count<<endl;
+        cout << "NOW :" << count << endl;
         for (int THREAD_NUM = 1; THREAD_NUM < 9; THREAD_NUM++)
         {
             // m = map<ll, ll>();
-            tree = new Btree<ll>(20);
+            tree = new Btree<ll>(5);
             vector<thread> threads;
             vector<ll> seeds;
             auto h = std::hash<std::thread::id>{}(std::this_thread::get_id());
@@ -760,6 +798,7 @@ int main()
             ll X = h % M;
             ll seed = X;
             ll length = (N / THREAD_NUM - 1);
+            map<ll, ll> m;
             for (ll i = 0; i < N; i++)
             {
                 if (i % (length) == 0 && seeds.size() != THREAD_NUM)
@@ -767,9 +806,23 @@ int main()
                     seeds.push_back(X);
                 }
                 // cout<<X<<endl;
-                // m[X]++;
+                m[X]++;
                 tree->Insert(X);
                 X = (A * X + B) % M;
+            }
+            bool IS_CONFLICT = false;
+            for (auto i : m)
+                if (i.second >= 2)
+                {
+                    cout << "CONFLICT" << endl;
+                    IS_CONFLICT = true;
+                }
+            if (IS_CONFLICT)
+                continue;
+            tree->make_number();
+            if (tree->debug())
+            {
+                exit(0);
             }
             assert(seeds.size() == THREAD_NUM);
             ll nn = N / THREAD_NUM - 3;
@@ -784,13 +837,14 @@ int main()
             }
             auto e = std::chrono::system_clock::now();
             cout << (std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) << endl;
+            sums[THREAD_NUM] += std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count();
+            tree->make_number();
+            if (tree->debug())
+            {
+                exit(0);
+            }
 
             assert(nn <= length);
-            // for (auto i : m)
-            //     if (i.second >= 2)
-            //     {
-            //         cout << "CONFLICT" << endl;
-            //     }
 
             {
                 // check
@@ -809,17 +863,17 @@ int main()
                         }
                         n = (A * n + B) % M;
                     }
-                    for (int i = nn; i < length; i++)
-                    {
-                        if (tree->Search(n) == 0)
-                        {
-                            tree->make_number();
-                            tree->print();
-                            cout << n << endl;
-                            exit(0);
-                        }
-                        n = (A * n + B) % M;
-                    }
+                    // for (int i = nn; i < length; i++)
+                    // {
+                    //     if (tree->Search(n) == 0)
+                    //     {
+                    //         tree->make_number();
+                    //         tree->print();
+                    //         cout << n << endl;
+                    //         exit(0);
+                    //     }
+                    //     n = (A * n + B) % M;
+                    // }
                 }
             }
             delete tree;
